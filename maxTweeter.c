@@ -9,8 +9,8 @@
 //online material
 //https://stackoverflow.com/questions/12911299/read-csv-file-in-c
 // read tokens splitted by comma in a line
-const char* getField(char* line, int num){
-  const char* tok;
+char* getField(char* line, int num){
+  char* tok;
   for (tok = strtok(line,",");tok && *tok;tok=strtok(NULL,",\n")){
     if(!--num){
       return tok;
@@ -22,7 +22,7 @@ const char* getField(char* line, int num){
 //find the colunm of name that acturally contains name or "name";
 //which could use fgets() later to read the first line as header to check
 int findName(char* line){
-  const char* tok;
+  char* tok;
   int colm = 1;
 
   for(tok = strtok(line,",");tok && *tok;tok=strtok(NULL,",\n")){
@@ -41,7 +41,7 @@ bool* isValid;
 bool* isQuated;
 
 void checkHeaderValid(char* line/*, bool* isValid*/){
-  const char* tok;
+  char* tok;
 
   for(tok = strtok(line,",");tok && *tok;tok=strtok(NULL,",\n")){
     if(!strcmp(tok, "name")){
@@ -58,7 +58,7 @@ void checkHeaderValid(char* line/*, bool* isValid*/){
 }
 
 bool checkContentValid(char* line/*, bool isQuated*/){
-  const char* tok;
+  char* tok;
 
   // check four different cases of invalid line:
   //1.name";
@@ -82,7 +82,7 @@ struct DataItem {
    int count;
 };
 
-struct DataItem tweeter[FILE_SIZE];
+//struct DataItem tweeter[];
 
 
 int comparator(const void* p, const void* q){
@@ -92,17 +92,19 @@ int comparator(const void* p, const void* q){
   return r-l; // Since we need to sort in decreaseing order
 }
 
-void getTopTweeters(int n){//in this case, n = 10; but for further tests, set it as n
-  qsort((void*)tweeter,sizeof(tweeter)/sizeof(tweeter[0]), sizeof(tweeter[0]),comparator);
+void getTopTweeters(int n,struct DataItem tweeterIn[], int numOfElement){//in this case, n = 10; but for further tests, set it as n
+  //int numOfElement = sizeof(tweeterIn)/sizeof(tweeterIn[0]);
 
-  if(sizeof(tweeter)/sizeof(tweeter[0]) < n){
-    for(int i=0;i<sizeof(tweeter)/sizeof(tweeter[0]);i++){
-      printf("There is/are only %d element(s)", sizeof(tweeter)/sizeof(tweeter[0]));
-      printf("Name: %s, Count: %d\n",tweeter[i].name,tweeter[i].count);
+  qsort((void*)tweeterIn,numOfElement, sizeof(tweeterIn[0]),comparator);
+
+  if(numOfElement < n){
+    for(int i=0;i<numOfElement;i++){
+      printf("There is/are only %d element(s)", numOfElement);
+      printf("Name: %s, Count: %d\n",tweeterIn[i].name,tweeterIn[i].count);
     }
   }else{
     for(int i=0;i<n;i++){
-      printf("Name: %s, Count: %d\n",tweeter[i].name,tweeter[i].count);
+      printf("Name: %s, Count: %d\n",tweeterIn[i].name,tweeterIn[i].count);
     }
   }
 
@@ -117,7 +119,9 @@ int main(int argc, char* argv[]){
    int column=0;
    int clk = 1;
    int index = 0;
+   int sizeExpand = 0;
    bool tempBool = false;
+   struct DataItem* tweeter = malloc(1 * sizeof(struct DataItem));
 
   // argc will be 1 + command line argument, in this case, should be 2
     if(argc != 2){
@@ -169,6 +173,8 @@ int main(int argc, char* argv[]){
             tweeter[m].count += 1;
           }else{
             index += 1;
+            sizeExpand = index + 1;
+            tweeter = realloc(tweeter,sizeExpand*sizeof(struct DataItem));
             tweeter[index].name = name;
             tweeter[index].count = 1;
           }
@@ -184,7 +190,9 @@ int main(int argc, char* argv[]){
       free(lineRead);
     }
 
-    getTopTweeters(10);
+    int numOfElement = sizeof(tweeter)/sizeof(tweeter[0]);
+
+    getTopTweeters(10,tweeter,numOfElement);
     return 0;
 
 }
