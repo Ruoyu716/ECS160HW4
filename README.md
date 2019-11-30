@@ -8,4 +8,4 @@ Note: try to fix struct array and expand it in c, but still not sure if using ma
 
 11/29/2019 Third commit.
 Note: Work well with test, test1, test2, test3, test4, test5 and empty.csv. But when .csv file satrts with name, it does not work.
-Also need to check white space and maximum line size, 
+Also need to check white space and maximum line size, need to figure out removing outter quotes when print message.
