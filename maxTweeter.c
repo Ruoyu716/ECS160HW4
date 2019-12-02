@@ -4,53 +4,40 @@
 #include <stdbool.h>
 
 #define FILE_SIZE 20000
-#define LINE_LENGTH 1024
+#define LINE_LENGTH 1025
 
-//online material
-//https://stackoverflow.com/questions/12911299/read-csv-file-in-c
+
 // read tokens splitted by comma in a line
-int getField(char* line, int num, char* content){
-    char* tok;
-    for (tok = strtok(line,",");tok && *tok;tok=strtok(NULL,",\n")){
-        if(!num--){
-            strcpy(content,tok);
-            return 1;
-        }
-    }
-    return 0;
-}
+bool spilt(char* input, int slot,char* newStr){
+    char copy[1025];
+    strcpy(copy,input);
 
+    int count = 0;
+    int startBit = -1;
 
-//find the colunm of name that acturally contains name or "name";
-//which could use fgets() later to read the first line as header to check
-int findName(char* line){
-    char* tok;
-    int colm = 0;
-
-    for(tok = strtok(line,",");tok && *tok;tok=strtok(NULL,",\n")){
-        if(!strcmp(tok, "name")){
-            /*isValid = true;
-            isQuated = false;*/
-            return colm;
-        }else if(!strcmp(tok, "\"name\"")){
-            /*isValid = true;
-            isQuated = true;*/
-            return colm;
+    for (int i = 0; i < strlen(copy); ++i) {
+        if(copy[i] == ',' || copy[i]=='\n'){
+            if(count == slot){
+                newStr[i-startBit-1] = '\000';
+            }
+            count++;
+            startBit = i;
+            if(copy[i] == ';'){
+                return newStr;
+            }
         }else{
-            colm ++;
+            if(count==slot){
+                newStr[i-startBit-1] = copy[i];
+            }
         }
     }
-    return -1; //there no column called name; NEED ERROR MESSAGE??????
+    return newStr;
 }
-
 
 struct DataItem {
     char name[100];
     int count;
 };
-
-//struct DataItem tweeter[];
-
 
 int comparator(const void* p, const void* q){
     int l = ((struct DataItem *)p)->count;
@@ -65,58 +52,83 @@ void getTopTweeters(int n,struct DataItem tweeterIn[], int numOfElement){//in th
     qsort((void*)tweeterIn,numOfElement, sizeof(tweeterIn[0]),comparator);
 
     if(numOfElement < n){
-        printf("There is/are only %d element(s)\n", numOfElement);
         for(int i=0;i<numOfElement;i++){
-            printf("Name: %s, Count: %d\n",tweeterIn[i].name,tweeterIn[i].count);
+            printf("%s:%d\n",tweeterIn[i].name,tweeterIn[i].count);
         }
     }else{
         for(int i=0;i<n;i++){
-            printf("Name: %s, Count: %d\n",tweeterIn[i].name,tweeterIn[i].count);
+            printf("%s:%d\n",tweeterIn[i].name,tweeterIn[i].count);
         }
     }
-
-
 }
 
+//count how many commas in a line for later checking.
+int countCom(char* lineRead){
+    int count = 0;
+    bool isComplete = false;
+
+    for (int i = 0; i < strlen(lineRead); ++i) {
+        if(lineRead[i] == ','){
+            count++;
+        }
+        if(lineRead[i]=='\n'){
+            isComplete = true;
+        }
+    }
+    if(isComplete){
+        return count;
+    }else{
+        return -count;
+    }
+}
 
 int main(int argc, char* argv[]){
-    char line[LINE_LENGTH];
-    char* lineRead;
+    char line[LINE_LENGTH+4];
+    char lineRead[1025];
     char name[100];
-
     int column;
     int clk = 1;
+
     int numOfitem=0;
+    int countComma=0;
+    int lastCount;
 
     bool isValid = false;
     bool isQuated = false;
 
+
     struct DataItem* tweeter = (struct DataItem*)malloc(sizeof(struct DataItem));
-    //int* test = (int*)malloc(5* sizeof(int));
-    //test[3]=1;
-    // argc will be 1 + command line argument, in this case, should be 2
-    //printf("%d\n",test[3]);
+
     if(argc != 2){
         printf("Invalid Input Format1\n");
         return -1;
     }
 
     FILE* fp = fopen(argv[1], "r");//read only
-
-    //check if the first line is header which contains name or "name"
+    if(fp == NULL){
+        printf("Invalid Input file\n");
+        return -1;
+    }
+    //check if the first line is a valid header
     if(fgets(line,LINE_LENGTH,fp)){
-        //printf("%s\n",line);
-        lineRead = strdup(line);
+        strcpy(lineRead,strdup(line));
 
-        char* tok;
         int headerCheck = 0;
-
-        for(tok = strtok(line,",");tok && *tok;tok=strtok(NULL,",\n")){
-            if(!strcmp(tok, "name")){
+        countComma = countCom(lineRead);
+        if(countComma < 0){
+            printf("Invalid Input Format: Header-1\n");
+            return -1;
+        }
+        char buffer[1025];
+        for (int i = 0; i <= countComma; ++i) {
+            spilt(lineRead,i,buffer);
+            if(!strcmp(buffer, "name")){
+                column = i;
                 isValid = true;
                 isQuated = false;
                 headerCheck ++;
-            }else if(!strcmp(tok, "\"name\"")){
+            }else if(!strcmp(buffer, "\"name\"")){
+                column = i;
                 isValid = true;
                 isQuated = true;
                 headerCheck++;
@@ -132,7 +144,6 @@ int main(int argc, char* argv[]){
             return -1;
         }
 
-        column = findName(lineRead);
         if(column == -1){
             printf("Invalid Input Format2\n");
             return -1;
@@ -141,12 +152,21 @@ int main(int argc, char* argv[]){
         printf("Invalid Input Format3");
         return -1;
     }
-    //printf("1 %d \n",column);
+
     while(fgets(line,LINE_LENGTH,fp)){
-        lineRead = strdup(line);
+        strcpy(lineRead,strdup(line));
+        if(lastCount < 0){
+            printf("Invalid Input Format6\n");
+            return -1;
+        }
+        lastCount=countCom(lineRead);
+
+        if(!(countComma == abs(lastCount))){
+            printf("Invalid Input Format6\n");
+            return -1;
+        }
         int tempVaild = 0;
-        tempVaild = getField(lineRead,column,name);
-        //printf("%s\n",name);
+        tempVaild = spilt(lineRead,column,name);
 
         // check four different cases of invalid line:
         //1.name";
@@ -159,6 +179,12 @@ int main(int argc, char* argv[]){
                           || (!isQuated && (name[0]=='"'|| name[strlen(name)-1]=='"')))){
             printf("Invalid Input Format4\n");
             return -1;
+        }
+        //remove outermost quotes for output
+        if(isQuated){
+            int lenth = strlen(name);
+            name[lenth-1]='\000';
+            strcpy(name,name+1);
         }
         bool exist = false;
         for (int i = 0; i < numOfitem; ++i) {
@@ -174,7 +200,7 @@ int main(int argc, char* argv[]){
             tweeter[numOfitem-1].count=1;
         }
 
-
+        clk++;
         if(clk > FILE_SIZE){
             printf("Invalid Input Format5\n");
             return -1;
@@ -182,10 +208,10 @@ int main(int argc, char* argv[]){
 
     }
 
-
     getTopTweeters(10,tweeter,numOfitem);
     free(tweeter);
-    free(lineRead);
+    //free(lineRead);
     return 0;
 
 }
+
