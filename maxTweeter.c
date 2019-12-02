@@ -6,7 +6,6 @@
 #define FILE_SIZE 20000
 #define LINE_LENGTH 1025
 
-
 // read tokens splitted by comma in a line
 bool spilt(char* input, int slot,char* newStr){
     char copy[1025];
@@ -14,9 +13,8 @@ bool spilt(char* input, int slot,char* newStr){
 
     int count = 0;
     int startBit = -1;
-
-    for (int i = 0; i < strlen(copy); ++i) {
-        if(copy[i] == ',' || copy[i]=='\n'){
+    for (int i = 0; i <= strlen(copy); ++i) {
+        if(copy[i] == ',' || copy[i]=='\n'||copy[i]=='\000'){
             if(count == slot){
                 newStr[i-startBit-1] = '\000';
             }
@@ -35,7 +33,7 @@ bool spilt(char* input, int slot,char* newStr){
 }
 
 struct DataItem {
-    char name[100];
+    char name[1025];
     int count;
 };
 
@@ -47,7 +45,6 @@ int comparator(const void* p, const void* q){
 }
 
 void getTopTweeters(int n,struct DataItem tweeterIn[], int numOfElement){//in this case, n = 10; but for further tests, set it as n
-    //int numOfElement = sizeof(tweeterIn)/sizeof(tweeterIn[0]);
 
     qsort((void*)tweeterIn,numOfElement, sizeof(tweeterIn[0]),comparator);
 
@@ -60,13 +57,14 @@ void getTopTweeters(int n,struct DataItem tweeterIn[], int numOfElement){//in th
             printf("%s:%d\n",tweeterIn[i].name,tweeterIn[i].count);
         }
     }
+
+
 }
 
-//count how many commas in a line for later checking.
+
 int countCom(char* lineRead){
     int count = 0;
     bool isComplete = false;
-
     for (int i = 0; i < strlen(lineRead); ++i) {
         if(lineRead[i] == ','){
             count++;
@@ -88,19 +86,25 @@ int main(int argc, char* argv[]){
     char name[100];
     int column;
     int clk = 1;
-
+    int index = 0;
+    int sizeExpand = 0;
     int numOfitem=0;
     int countComma=0;
     int lastCount;
-
     bool isValid = false;
     bool isQuated = false;
-
+    bool tempBool = false;
 
     struct DataItem* tweeter = (struct DataItem*)malloc(sizeof(struct DataItem));
-
+    if(tweeter == NULL){
+        printf("Invalid memory\n");
+        return -1;
+    }
+    //int* test = (int*)malloc(5* sizeof(int));
+    //test[3]=1;
+    // argc will be 1 + command line argument, in this case, should be 2
     if(argc != 2){
-        printf("Invalid Input Format1\n");
+        printf("Invalid Input Format\n");
         return -1;
     }
 
@@ -109,18 +113,17 @@ int main(int argc, char* argv[]){
         printf("Invalid Input file\n");
         return -1;
     }
-    //check if the first line is a valid header
+    //check if the first line is valid
     if(fgets(line,LINE_LENGTH,fp)){
+        //printf("%s\n",line);
         strcpy(lineRead,strdup(line));
-
         int headerCheck = 0;
         countComma = countCom(lineRead);
         if(countComma < 0){
-            printf("Invalid Input Format: Header-1\n");
-            return -1;
+            lastCount = countComma;
         }
         char buffer[1025];
-        for (int i = 0; i <= countComma; ++i) {
+        for (int i = 0; i <= abs(countComma); ++i) {
             spilt(lineRead,i,buffer);
             if(!strcmp(buffer, "name")){
                 column = i;
@@ -135,8 +138,9 @@ int main(int argc, char* argv[]){
             }
         }
 
+
         if(isValid == false){
-            printf("Invalid Input Format: Header\n");
+            printf("Invalid Input Format\n");
             return -1;
         }
         if(headerCheck > 1){
@@ -145,24 +149,26 @@ int main(int argc, char* argv[]){
         }
 
         if(column == -1){
-            printf("Invalid Input Format2\n");
+            printf("Invalid Input Format\n");
             return -1;
         }
     }else{
-        printf("Invalid Input Format3");
+        printf("Invalid Input Format\n");
         return -1;
     }
-
+    if(fp == NULL){
+        printf("Invalid Input file\n");
+        return -1;
+    }
     while(fgets(line,LINE_LENGTH,fp)){
-        strcpy(lineRead,strdup(line));
-        if(lastCount < 0){
-            printf("Invalid Input Format6\n");
-            return -1;
-        }
+       strcpy(lineRead,strdup(line));
+       if(lastCount < 0){
+           printf("Invalid Input Format\n");
+           return -1;
+       }
         lastCount=countCom(lineRead);
-
         if(!(countComma == abs(lastCount))){
-            printf("Invalid Input Format6\n");
+            printf("Invalid Input Format\n");
             return -1;
         }
         int tempVaild = 0;
@@ -177,10 +183,9 @@ int main(int argc, char* argv[]){
                           || (name[0] == '"' && name[strlen(name)-1] != '"')
                           || (isQuated &&(name[0]!='"' || name[strlen(name)-1]!='"'))
                           || (!isQuated && (name[0]=='"'|| name[strlen(name)-1]=='"')))){
-            printf("Invalid Input Format4\n");
+            printf("Invalid Input Format\n");
             return -1;
         }
-        //remove outermost quotes for output
         if(isQuated){
             int lenth = strlen(name);
             name[lenth-1]='\000';
@@ -196,17 +201,23 @@ int main(int argc, char* argv[]){
         if(!exist){
             numOfitem++;
             tweeter = realloc(tweeter, numOfitem*sizeof(struct DataItem));
+            if(tweeter == NULL){
+                printf("Invalid memory space\n");
+                return -1;
+            }
             strcpy(tweeter[numOfitem-1].name,name);
             tweeter[numOfitem-1].count=1;
         }
 
         clk++;
         if(clk > FILE_SIZE){
-            printf("Invalid Input Format5\n");
+            printf("Invalid Input Format\n");
             return -1;
         }
 
     }
+
+    int numOfElement = sizeof(tweeter)/sizeof(tweeter[0]);
 
     getTopTweeters(10,tweeter,numOfitem);
     free(tweeter);
@@ -214,4 +225,3 @@ int main(int argc, char* argv[]){
     return 0;
 
 }
-
