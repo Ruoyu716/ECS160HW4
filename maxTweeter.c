@@ -86,14 +86,12 @@ int main(int argc, char* argv[]){
     char name[100];
     int column;
     int clk = 1;
-    int index = 0;
-    int sizeExpand = 0;
+
     int numOfitem=0;
     int countComma=0;
     int lastCount;
     bool isValid = false;
     bool isQuated = false;
-    bool tempBool = false;
 
     struct DataItem* tweeter = (struct DataItem*)malloc(sizeof(struct DataItem));
     if(tweeter == NULL){
@@ -156,16 +154,13 @@ int main(int argc, char* argv[]){
         printf("Invalid Input Format\n");
         return -1;
     }
-    if(fp == NULL){
-        printf("Invalid Input file\n");
-        return -1;
-    }
+
     while(fgets(line,LINE_LENGTH,fp)){
-       strcpy(lineRead,strdup(line));
-       if(lastCount < 0){
-           printf("Invalid Input Format\n");
-           return -1;
-       }
+        strcpy(lineRead,strdup(line));
+        if(lastCount < 0){
+            printf("Invalid Input Format\n");
+            return -1;
+        }
         lastCount=countCom(lineRead);
         if(!(countComma == abs(lastCount))){
             printf("Invalid Input Format\n");
@@ -216,8 +211,6 @@ int main(int argc, char* argv[]){
         }
 
     }
-
-    int numOfElement = sizeof(tweeter)/sizeof(tweeter[0]);
 
     getTopTweeters(10,tweeter,numOfitem);
     free(tweeter);
