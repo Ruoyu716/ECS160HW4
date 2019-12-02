@@ -1,3 +1,5 @@
 # ECS160HW4
 
-Ruoyu Li\nLambert Lihe
+Ruoyu Li 
+
+Lambert Lihe
